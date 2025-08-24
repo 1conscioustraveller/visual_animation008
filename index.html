@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Psychedelic Visual Generator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            overflow: hidden;
+            font-family: 'Arial', sans-serif;
+            background-color: #000;
+            color: #fff;
+            padding: 5px;
+        }
+        
+        #canvas-container {
+            position: absolute;
+            top: 5px;
+            left: 5px;
+            right: 5px;
+            bottom: 45px;
+        }
+        
+        canvas {
+            display: block;
+            background-color: #000;
+        }
+        
+        #controls {
+            position: absolute;
+            bottom: 5px;
+            left: 5px;
+            right: 5px;
+            height: 35px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 0 10px;
+            background-color: rgba(0, 0, 0, 0.7);
+            border-radius: 8px;
+            transition: opacity 0.5s ease;
+            opacity: 0.3;
+        }
+        
+        #controls:hover {
+            opacity: 1;
+        }
+        
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        label {
+            font-size: 11px;
+            color: #aaa;
+            white-space: nowrap;
+        }
+        
+        select, input[type="range"] {
+            background: rgba(80, 80, 80, 0.5);
+            color: #fff;
+            border: 1px solid #444;
+            border-radius: 4px;
+            padding: 3px 6px;
+            font-size: 11px;
+        }
+        
+        select {
+            cursor: pointer;
+        }
+        
+        input[type="range"] {
+            width: 100px;
+            height: 6px;
+            -webkit-appearance: none;
+            background: rgba(100, 100, 100, 0.5);
+            border-radius: 3px;
+        }
+        
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #6f42c1;
+            cursor: pointer;
+        }
+        
+        .dark-mode-toggle {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.5);
+            color: #fff;
+            border: 1px solid #444;
+            border-radius: 4px;
+            padding: 4px 8px;
+            font-size: 11px;
+            cursor: pointer;
+            opacity: 0.3;
+            transition: opacity 0.3s ease;
+            z-index: 100;
+        }
+        
+        .dark-mode-toggle:hover {
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+    <div id="canvas-container">
+        <canvas id="psychedelicCanvas"></canvas>
+    </div>
+    
+    <div id="controls">
+        <div class="control-group">
+            <label for="effectSelect">Effect:</label>
+            <select id="effectSelect">
+                <option value="swirl">Swirling Vortex</option>
+                <option value="grid">Pulsing Grid</option>
+                <option value="waves">Color Waves</option>
+                <option value="particles">Particle Field</option>
+                <option value="tunnels">Hypnotic Tunnels</option>
+                <option value="kaleidoscope">Kaleidoscope</option>
+            </select>
+        </div>
+        
+        <div class="control-group">
+            <label for="speedSlider">Speed:</label>
+            <input type="range" id="speedSlider" min="1" max="100" value="50">
+        </div>
+        
+        <div class="control-group">
+            <label for="complexitySlider">Complexity:</label>
+            <input type="range" id="complexitySlider" min="1" max="100" value="50">
+        </div>
+        
+        <div class="control-group">
+            <label for="trailSlider">Trail:</label>
+            <input type="range" id="trailSlider" min="0" max="100" value="20">
+        </div>
+    </div>
+    
+    <button class="dark-mode-toggle" id="darkModeToggle">Dark Mode</button>
+    
+    <script>
+        // Canvas setup
+        const canvas = document.getElementById('psychedelicCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Control elements
+        const effectSelect = document.getElementById('effectSelect');
+        const speedSlider = document.getElementById('speedSlider');
+        const complexitySlider = document.getElementById('complexitySlider');
+        const trailSlider = document.getElementById('trailSlider');
+        const darkModeToggle = document.getElementById('darkModeToggle');
+        
+        // Animation variables
+        let time = 0;
+        let darkMode = true;
+        let animationId;
+        
+        // Resize canvas to fit window
+        function resizeCanvas() {
+            canvas.width = window.innerWidth - 10;
+            canvas.height = window.innerHeight - 50;
+        }
+        
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+        
+        // Effect functions
+        const effects = {
+            swirl: function() {
+                const speed = speedSlider.value / 500;
+                const complexity = complexitySlider.value / 10;
+                const trail = trailSlider.value / 100;
+                
+                ctx.globalCompositeOperation = 'source-over';
+                ctx.fillStyle = darkMode ? `rgba(0, 0, 0, ${trail})` : `rgba(255, 255, 255, ${trail})`;
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                
+                for (let i = 0; i < complexity; i++) {
+                    const angle = time * speed + i * Math.PI * 2 / complexity;
+                    const radius = Math.min(canvas.width, canvas.height) * 0.4;
+                    const x = canvas.width / 2 + Math.cos(angle) * radius;
+                    const y = canvas.height / 2 + Math.sin(angle) * radius;
+                    const size = 30 + Math.sin(time * 0.01 + i) * 20;
+                    
+                    const gradient = ctx.createRadialGradient(x, y, 0, x, y, size);
+                    gradient.addColorStop(0, `hsl(${(time * 2 + i * 30) % 360}, 100%, 60%)`);
+                    gradient.addColorStop(1, `hsl(${(time * 2 + i * 30 + 120) % 360}, 100%, 60%)`);
+                    
+                    ctx.globalCompositeOperation = 'lighter';
+                    ctx.beginPath();
+                    ctx.arc(x, y, size, 0, Math.PI * 2);
+                    ctx.fillStyle = gradient;
+                    ctx.fill();
+                }
+            },
+            
+            grid: function() {
+                const speed = speedSlider.value / 200;
+                const complexity = Math.floor(complexitySlider.value / 5) + 5;
+                const trail = trailSlider.value / 100;
+                
+                ctx.globalCompositeOperation = 'source-over';
+                ctx.fillStyle = darkMode ? `rgba(0, 0, 0, ${trail})` : `rgba(255, 255, 255, ${trail})`;
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                
+                const cellSize = Math.min(canvas.width, canvas.height) / complexity;
+                
+                for (let x = 0; x < complexity; x++) {
+                    for (let y = 0; y < complexity; y++) {
+                        const pulse = Math.sin(time * speed + x * 0.5 + y * 0.5) * 0.5 + 0.5;
+                        const hue = (time * 2 + (x + y) * 10) % 360;
+                        
+                        ctx.globalCompositeOperation = 'lighter';
+                        ctx.fillStyle = `hsla(${hue}, 100%, 50%, ${pulse * 0.6})`;
+                        ctx.fillRect(
+                            x * cellSize, 
+                            y * cellSize, 
+                            cellSize * pulse, 
+                            cellSize * pulse
+                        );
+                    }
+                }
+            },
+            
+            waves: function() {
+                const speed = speedSlider.value / 100;
+                const complexity = complexitySlider.value / 20;
+                const trail = trailSlider.value / 100;
+                
+                ctx.globalCompositeOperation = 'source-over';
+                ctx.fillStyle = darkMode ? `rgba(0, 0, 0, ${trail})` : `rgba(255, 255, 255, ${trail})`;
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                
+                for (let i = 0; i < 5; i++) {
+                    const amplitude = Math.min(canvas.width, canvas.height) * 0.2;
+                    const frequency = complexity;
+                    const phase = time * speed + i * Math.PI / 2.5;
+                    
+                    ctx.globalCompositeOperation = 'lighter';
+                    ctx.beginPath();
+                    
+                    for (let x = 0; x < canvas.width; x += 5) {
+                        const y = canvas.height / 2 + 
+                                 Math.sin(x * frequency * 0.01 + phase) * amplitude * Math.sin(phase) +
+                                 Math.cos(x * frequency * 0.005 + phase * 1.5) * amplitude * 0.5;
+                        
+                        if (x === 0) {
+                            ctx.moveTo(x, y);
+                        } else {
+                            ctx.lineTo(x, y);
+                        }
+                    }
+                    
+                    const hue = (time * 3 + i * 72) % 360;
+                    ctx.strokeStyle = `hsl(${hue}, 100%, 60%)`;
+                    ctx.lineWidth = 3;
+                    ctx.stroke();
+                }
+            },
+            
+            particles: function() {
+                const speed = speedSlider.value / 100;
+                const complexity = Math.floor(complexitySlider.value / 3) + 10;
+                const trail = trailSlider.value / 100;
+                
+                ctx.globalCompositeOperation = 'source-over';
+                ctx.fillStyle = darkMode ? `rgba(0, 0, 0, ${trail})` : `rgba(255, 255, 255, ${trail})`;
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                
+                for (let i = 0; i < complexity; i++) {
+                    const angle = time * speed * 0.1 + i;
+                    const distance = Math.sin(time * 0.001 + i) * Math.min(canvas.width, canvas.height) * 0.4;
+                    const x = canvas.width / 2 + Math.cos(angle) * distance;
+                    const y = canvas.height / 2 + Math.sin(angle) * distance;
+                    const size = Math.sin(time * 0.02 + i) * 10 + 15;
+                    
+                    ctx.globalCompositeOperation = 'lighter';
+                    const gradient = ctx.createRadialGradient(x, y, 0, x, y, size);
+                    gradient.addColorStop(0, `hsl(${(time * 5 + i * 20) % 360}, 100%, 70%)`);
+                    gradient.addColorStop(1, `hsl(${(time * 5 + i * 20 + 60) % 360}, 100%, 50%)`);
+                    
+                    ctx.beginPath();
+                    ctx.arc(x, y, size, 0, Math.PI * 2);
+                    ctx.fillStyle = gradient;
+                    ctx.fill();
+                }
+            },
+            
+            tunnels: function() {
+                const speed = speedSlider.value / 200;
+                const complexity = complexitySlider.value / 10;
+                const trail = trailSlider.value / 100;
+                
+                ctx.globalCompositeOperation = 'source-over';
+                ctx.fillStyle = darkMode ? `rgba(0, 0, 0, ${trail})` : `rgba(255, 255, 255, ${trail})`;
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                
+                const centerX = canvas.width / 2;
+                const centerY = canvas.height / 2;
+                const maxRadius = Math.sqrt(centerX * centerX + centerY * centerY);
+                
+                for (let i = 0; i < complexity; i++) {
+                    const angle = time * speed + i * Math.PI * 2 / complexity;
+                    const radius = (Math.sin(time * 0.005 + i) * 0.5 + 0.5) * maxRadius * 0.7;
+                    
+                    for (let r = 0; r < radius; r += 10) {
+                        const pulse = Math.sin(time * 0.01 + r * 0.05 + i) * 0.5 + 0.5;
+                        const x = centerX + Math.cos(angle) * r;
+                        const y = centerY + Math.sin(angle) * r;
+                        const size = pulse * 8 + 2;
+                        
+                        ctx.globalCompositeOperation = 'lighter';
+                        ctx.beginPath();
+                        ctx.arc(x, y, size, 0, Math.PI * 2);
+                        ctx.fillStyle = `hsl(${(time * 2 + r * 0.5 + i * 30) % 360}, 100%, 60%)`;
+                        ctx.fill();
+                    }
+                }
+            },
+            
+            kaleidoscope: function() {
+                const speed = speedSlider.value / 300;
+                const complexity = Math.floor(complexitySlider.value / 10) + 4;
+                const trail = trailSlider.value / 100;
+                
+                ctx.globalCompositeOperation = 'source-over';
+                ctx.fillStyle = darkMode ? `rgba(0, 0, 0, ${trail})` : `rgba(255, 255, 255, ${trail})`;
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                
+                const slices = complexity;
+                const sliceAngle = (Math.PI * 2) / slices;
+                const centerX = canvas.width / 2;
+                const centerY = canvas.height / 2;
+                const radius = Math.min(centerX, centerY) * 0.9;
+                
+                for (let i = 0; i < slices; i++) {
+                    ctx.save();
+                    ctx.translate(centerX, centerY);
+                    ctx.rotate(i * sliceAngle + time * speed);
+                    
+                    for (let j = 0; j < 5; j++) {
+                        const y = Math.sin(time * 0.01 + j * 0.5) * radius * 0.5;
+                        const size = Math.sin(time * 0.02 + j) * 20 + 30;
+                        
+                        ctx.globalCompositeOperation = 'lighter';
+                        ctx.beginPath();
+                        ctx.arc(0, y, size, 0, Math.PI * 2);
+                        const hue = (time * 3 + i * 360 / slices + j * 20) % 360;
+                        ctx.fillStyle = `hsla(${hue}, 100%, 60%, 0.7)`;
+                        ctx.fill();
+                    }
+                    
+                    ctx.restore();
+                }
+            }
+        };
+        
+        // Animation loop
+        function animate() {
+            time++;
+            
+            const selectedEffect = effectSelect.value;
+            if (effects[selectedEffect]) {
+                effects[selectedEffect]();
+            }
+            
+            animationId = requestAnimationFrame(animate);
+        }
+        
+        // Initialize animation
+        animate();
+        
+        // Dark mode toggle
+        darkModeToggle.addEventListener('click', function() {
+            darkMode = !darkMode;
+            this.textContent = darkMode ? 'Dark Mode' : 'Light Mode';
+            
+            // Clear canvas with new background
+            ctx.fillStyle = darkMode ? '#000' : '#fff';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        });
+    </script>
+</body>
+</html>
